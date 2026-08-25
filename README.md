@@ -8,7 +8,7 @@
 
 ## 快速開始
 
-需要 Flutter SDK 與一個 Android 或 iOS 模擬器。**本專案以 Flutter 3.47.0（Dart 3.13.0）開發與驗證**，CI 也鎖同一版。
+需要 Flutter SDK 與一台 Android 或 iOS 的模擬器或實機。**本專案以 Flutter 3.47.0（Dart 3.13.0）開發與驗證**，CI 也鎖同一版。
 
 ```bash
 git clone https://github.com/allenljf/weather-forecast-flutter.git
@@ -19,7 +19,35 @@ flutter run --dart-define-from-file=dart_defines/reviewer.json
 
 就這樣，不必申請任何帳號。`dart_defines/reviewer.json` 裡附了一組**可以直接使用的中央氣象署授權碼**——它是刻意公開的，理由與取捨寫在下面的[安全章節](#安全正式專案該如何保護-token)。
 
-VS Code 使用者可以直接按 F5，`.vscode/launch.json` 的預設設定就是這一組授權碼。
+### 指定 Android 或 iOS 裝置
+
+Android 與 iOS 是同一條指令，只差 `-d`：
+
+```bash
+flutter devices    # 列出可用裝置，複製要用的 device id
+
+# Android（模擬器或 USB 實機皆同）
+flutter run -d emulator-5554 --dart-define-from-file=dart_defines/reviewer.json
+
+# iOS 模擬器
+open -a Simulator
+flutter run -d <simulator-id> --dart-define-from-file=dart_defines/reviewer.json
+```
+
+只接一台裝置時可以整個省略 `-d`。iOS 實機需要在 Xcode 設定自己的簽章團隊。
+
+### 從 IDE 執行
+
+`--dart-define-from-file` 得傳給 Flutter，而 **IDE 的預設 Run 按鈕不會自動帶上**，直接按會看到啟動時的授權碼缺失訊息。
+
+| IDE | 做法 |
+| --- | --- |
+| VS Code | Run and Debug 側欄選 **weather_forecast (reviewer token)** 再按 F5。`.vscode/launch.json` 已附在 repo 裡。 |
+| Android Studio／IntelliJ | `Run → Edit Configurations… → main.dart → Additional run args` 填入 `--dart-define-from-file=dart_defines/reviewer.json`。`.idea/` 不進版控，這一步要自己做一次。 |
+
+請選 **main.dart** 這個 Flutter 設定，不要用 Android Studio 工具列上的 Android **app**（Gradle）設定——那條路徑繞過 Flutter CLI，`--dart-define` 傳不進去。
+
+`--dart-define` 是**編譯期**注入。改了 `dart_defines/*.json` 之後，hot reload 與 hot restart 都不會生效，必須完全結束 `flutter run` 重跑。
 
 ### 想改用自己的授權碼
 
