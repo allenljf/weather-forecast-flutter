@@ -2,13 +2,14 @@
 // 這個檔案會被 #6–#10 整個取代，因此刻意沒有抽象、沒有狀態管理、沒有錯誤處理。
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:weather_forecast/core/app_config.dart';
 
-const _token = String.fromEnvironment('WEATHER_API_TOKEN');
 const _endpoint =
     'https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001';
 const _location = '臺北市';
 
 Future<void> main() async {
+  AppConfig.ensureLoaded();
   WidgetsFlutterBinding.ensureInitialized();
 
   // 失敗直接往外拋（#15 不處理任何錯誤），所以在 runApp 之前就把資料抓完。
@@ -26,7 +27,7 @@ Future<List<String>> _fetchWxSlots() async {
           debugPrint('[tracer] header keys: ${options.headers.keys.toList()}');
           debugPrint(
             '[tracer] token leaked into uri: '
-            '${options.uri.toString().contains(_token)}',
+            '${options.uri.toString().contains(AppConfig.weatherApiToken)}',
           );
           handler.next(options);
         },
@@ -35,7 +36,7 @@ Future<List<String>> _fetchWxSlots() async {
 
   final response = await dio.getUri<Map<String, dynamic>>(
     Uri.parse(_endpoint).replace(queryParameters: {'locationName': _location}),
-    options: Options(headers: {'Authorization': _token}),
+    options: Options(headers: {'Authorization': AppConfig.weatherApiToken}),
   );
 
   final location =
