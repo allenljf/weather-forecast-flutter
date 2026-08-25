@@ -45,7 +45,7 @@ final class ForecastControllerProvider
 }
 
 String _$forecastControllerHash() =>
-    r'09e6f0037faaa96730ea1b691c2f52eb6c1be00b';
+    r'4c5b140c67bc24fa586d680e014c593c43f59adc';
 
 /// 驅動顯示區塊的四態狀態機。（Q8(a)、Q18(b)）
 

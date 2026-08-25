@@ -1,0 +1,106 @@
+name: CI
+
+# Q14：工作直接進 main，不開分支也不開 PR。pull_request 留著只為了 fork 來的貢獻。
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Q33：鎖版本而不是 channel: stable。這個 repo 不是持續維護的產品，
+  # 自動追新沒有回報，卻可能在無人看管時因上游變動而變紅。
+  FLUTTER_VERSION: 3.47.0
+
+# Q16：整份 workflow 不使用任何 secret。測試全走 mock；build 期
+# String.fromEnvironment 未定義時回空字串，授權碼的檢查發生在執行期。
+# 也刻意不加打真 API 的 smoke test——那會把氣象署的可用性接進交付物的 CI。
+
+jobs:
+  analyze:
+    name: analyze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      # Q30 實作期修正（F41–F44）：不跑 dart run custom_lint。riverpod_lint 3.x
+      # 改用 analyzer plugin，而 flutter analyze 不執行 plugin，
+      # 因此 riverpod 規則只在 IDE 生效，CI 刻意不把關。
+      - run: flutter analyze
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      # Q30(3b)：產生覆蓋率報告，但不設門檻。
+      - run: flutter test --coverage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/lcov.info
+
+  codegen-check:
+    name: codegen-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      # Q5：*.g.dart 進版控，所以需要一道檢查證明它們沒有與原始碼脫節。
+      # build_runner 2.16.0 已移除 --delete-conflicting-outputs（帶了只會被忽略）。
+      - run: dart run build_runner build
+      - name: Generated files must match the committed ones
+        run: git diff --exit-code
+
+  build-android:
+    name: build-android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter build apk
+
+  build-ios:
+    name: build-ios
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      # Q16(ii)：需求原文是「在 Android 和 iOS 模擬器上可以運作」，
+      # --simulator 正是這句話的字面驗證，且不需要任何憑證。
+      - run: flutter build ios --simulator

@@ -229,6 +229,20 @@ API 回 3 個 12 小時時段 × 5 個要素（Wx／PoP／MinT／MaxT／CI）。
 - 確立 `build_runner` 進 dev_dependencies，`.gitignore` **不**排除 `*.g.dart`。
 - 開啟後續問題：CI 需要驗證「產生檔與原始碼同步」（跑一次 build_runner 後 `git diff` 必須為空），否則 commit 產生檔反而會變成腐爛來源。
 
+**實作期修正（2026-08-25，#11 實作時實測）**
+
+| # | 事實 | 來源 |
+| --- | --- | --- |
+| F45 | `build_runner` 2.16.0 已移除 `--delete-conflicting-outputs`。帶上去不會失敗，只會印一行 `These options have been removed and were ignored` | 實測 `dart run build_runner build --help`／`build`（2026-08-25） |
+| F46 | 本 repo 的 `forecast_controller.g.dart` 在 #11 之前就已與原始碼脫節（riverpod 的 provider hash 不符），因為 #9／#10 改了原始碼卻沒重跑產生器 | 實測 `dart run build_runner build` 後 `git diff` |
+
+F46 正是 Q5 影響欄預言的腐爛，而且在**沒有人刻意製造**的情況下發生——這條 CI 檢查在被寫下的當天就抓到了第一個真實案例。它同時也是「產生檔進版控」這個決定的代價的實證：決定本身不變（理由仍成立），但代價需要一道自動檢查來償還。
+
+**影響**
+
+- #11 的 `codegen-check` job 指令改為 `dart run build_runner build`，不帶已移除的旗標。
+- 隨 #11 一併修正脫節的產生檔。
+
 ---
 
 ### Q6 — 資料模型：freezed 還是不要
@@ -1127,6 +1141,7 @@ riverpod 規則在 CLI 不生效，選項為 (a) 接受缺口、CI 不把關；(
 | 5 | Q24 影響欄「失敗由六種變七種」 | **AI 寫錯**，已更正：Q24 是精確命名第 ⑥ 種，總數維持六種 |
 | 6 | AI 建立的 `.gitignore` 排除了 `pubspec.lock` | **AI 寫錯**，見 Q34 |
 | 7 | Q30「加 `custom_lint`，CI 跑 `dart run custom_lint`」 | 被實作期實測推翻（F41–F44）→ 改用 analyzer plugin 機制，移除 `custom_lint`；見 Q30 的實作期修正 |
+| 8 | #11 原文的 `build_runner build --delete-conflicting-outputs` | 被實作期實測推翻（F45）→ 該旗標在 build_runner 2.16.0 已移除；見 Q5 的實作期修正 |
 
 ### 共通事實（本輪查證所得）
 
