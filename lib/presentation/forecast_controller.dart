@@ -16,19 +16,37 @@ class ForecastController extends _$ForecastController {
   /// 無法被單元測試覆蓋。（Q18(b)）
   var _latestRequest = 0;
 
+  /// 最後一次正規化成功的縣市，供 [retry] 重跑。
+  String? _lastLocationName;
+
   @override
   ForecastViewState build() => const ForecastInitial();
 
   /// 送出一次查詢：正規化 → 命中才呼叫 repository → 指派狀態。
   Future<void> search(String query) async {
-    final requestId = ++_latestRequest;
     final locationName = normaliseQuery(query);
     if (locationName == null) {
       // 上游對錯誤輸入完全靜默（F11），所以無效查詢在本地就結束、不發出請求。
+      // 它仍然算一次查詢：仍在飛的舊請求要跟著作廢。
+      _latestRequest++;
       state = ForecastError(InvalidQuery(query: query));
       return;
     }
 
+    _lastLocationName = locationName;
+    await _fetch(locationName);
+  }
+
+  /// 重試：重跑失敗的那一次查詢，而不是輸入框此刻的內容——使用者按重試時
+  /// 可能已經在框裡打了別的字，但他要的是剛才那個縣市再來一次。（Q20 1(a)）
+  Future<void> retry() async {
+    final locationName = _lastLocationName;
+    if (locationName == null) return;
+    await _fetch(locationName);
+  }
+
+  Future<void> _fetch(String locationName) async {
+    final requestId = ++_latestRequest;
     state = const ForecastLoading();
 
     final result = await ref
