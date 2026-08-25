@@ -3,7 +3,7 @@ include: package:flutter_lints/flutter.yaml
 
 # riverpod_lint 3.1.8 已改用 analysis_server_plugin，不再經由 custom_lint 安裝。
 # 實測 Flutter 3.47.0 / Dart 3.13.0 的 `flutter analyze` 不會執行 plugin，
-# 因此這裡只對 IDE 生效；CI 無法以此把關 riverpod 規則。
+# 因此這裡只對 IDE 生效。Q30 已決定接受此缺口，CI 不把關 riverpod 規則。
 plugins:
   riverpod_lint: ^3.1.8
 

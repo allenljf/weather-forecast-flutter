@@ -35,7 +35,7 @@
 | Q27 | 認證方式 | **(b)** HTTP header（原始 token，**無 `Bearer` 前綴**） |
 | Q28 | token 以什麼形式進 repo | **(c)** commit `dart_defines/reviewer.json` + **(i)** 保留啟動期 fail-fast |
 | Q29 | README 安全說明的深度與誠實度 | **1(c)** 寫到後端 proxy 層級、**2(b)** 明寫本專案取捨 |
-| Q30 | 靜態分析嚴格度 | **1(c)** `flutter_lints` + 手選規則 + `strict-casts`、**2** 加 `riverpod_lint`（實作期修正：改用 analyzer plugin，移除 `custom_lint`）、**3(b)** 產生覆蓋率報告但不卡門檻 |
+| Q30 | 靜態分析嚴格度 | **1(c)** `flutter_lints` + 手選規則 + `strict-casts`、**2** 加 `riverpod_lint`（實作期修正：改用 analyzer plugin、移除 `custom_lint`，並**接受 CI 不把關 riverpod 規則**）、**3(b)** 產生覆蓋率報告但不卡門檻 |
 | Q31 | 主題色與深色模式 | **1(b)** `ColorScheme.fromSeed`、**2(b)** 同時提供 `darkTheme` 跟隨系統 |
 | Q32 | `dart_defines/` 檔案佈局 | **(c)** 留 `reviewer.json`（committed）+ `dev.example.json`（committed），刪除 `dev.json` |
 | Q33 | CI 的 Flutter 版本 | **(a)** 鎖定 3.47.0 |
@@ -1061,13 +1061,25 @@ F33（後果可能是終止會員資格，非僅 token 失效）、F34（public 
 
 **理由**
 
-`custom_lint` 不是目的，riverpod 的規則才是；既然上游已經換了安裝機制，跟著換比把 `riverpod_lint` 降版鎖死在舊機制上更合理。而 F44 讓「CI 用 lint 把關 riverpod 規則」這件事在目前的工具鏈上做不到——與其假裝有把關，不如明寫沒有。
+`custom_lint` 不是目的，riverpod 的規則才是；既然上游已經換了安裝機制，跟著換比把 `riverpod_lint` 降版鎖死在舊機制上更合理。
+
+**F44 的缺口要不要補？**
+
+riverpod 規則在 CLI 不生效，選項為 (a) 接受缺口、CI 不把關；(b) 把 `riverpod_lint` 降版鎖回 custom_lint 機制換取 CI 能跑；(c) 自寫檢查步驟模擬。
+
+**我的決定**
+
+(a) 接受缺口，**CI 不把關 riverpod 規則**。
+
+**我的理由**
+
+（推論）riverpod_lint 擋的是「寫錯 Riverpod 用法」這類問題，而這類問題在 IDE 即時回報就會被修掉，排不到需要 CI 再攜一道網；為了這層重複保護而把一個主要套件鎖在已被上游放棄的機制上，代價遠高於收益。請校對。
 
 **影響**
 
-- 取代原「CI 多一個 `dart run custom_lint` 步驟」：CI 只跑 `flutter analyze`。
-- **riverpod 規則目前只在 IDE 生效，CI 無法把關**。這是已知缺口，理由與實測寫在 `analysis_options.yaml` 的註解裡，等上游或 SDK 支援 CLI plugin 後即可補上。
-- 連帶修改 #1 的驗收條件（刪去 `dart run custom_lint` 一條）與 #11 的 CI 步驟。
+- 取代原「CI 多一個 `dart run custom_lint` 步驟」：CI 的 `analyze` job 只跑 `flutter analyze`。
+- **riverpod 規則只在 IDE 生效是已知且已接受的缺口**，不是疏失。理由與實測寫在 `analysis_options.yaml` 的註解裡；若日後 SDK 支援 CLI plugin，不需改設定就會自動補上。
+- 連帶修改 #1 的驗收條件（刪去 `dart run custom_lint` 一條）與 #11 的 `analyze` job。
 
 ---
 
