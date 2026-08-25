@@ -13,6 +13,8 @@ analyzer:
     strict-raw-types: true
   errors:
     invalid_annotation_target: ignore
+  # 下面四個平台目錄本專案不存在（Q17 只產 android/ios），但刪掉沒用：
+  # 實測 flutter analyze 會印 "Upgrading analysis_options.yaml…" 自己寫回去。（F49）
   exclude:
     - "**/*.g.dart"
     - build/**

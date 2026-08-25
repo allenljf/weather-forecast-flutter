@@ -331,3 +331,54 @@
 
 **產出**
 修正 `docs/agents/issue-tracker.md` 的 Blocking 與 Frontier query 兩段：釐清 `issue_dependencies_summary` 是 **REST API** 的欄位名，而 `gh issue list --json` 用的是 **`blockedBy`**（物件形式 `{nodes, totalCount}`），並附上可直接執行的正確指令。修正後實測指令可跑、且確認舊寫法確實回報 `Unknown JSON field`。
+
+---
+
+> **紀錄斷點**：#13 之後到 #14 之間是 #1–#13 的逐票實作 sessions（13:20–23:00 左右）。那些 session 用的都是 `docs/agents/delivery.md` 裡那段交棒 prompt 的填空版，當時沒有逐則存檔，事後也無法逐字還原——依本檔「不改寫、不修飾」的規則，寧可留一個標明的缺口，也不補寫回憶版本。
+
+---
+
+### #14 · 2026-08-25 23:10
+
+**我下的 prompt**
+
+> 規格在 #14，決策脈絡在 docs/GRILL_LOG.md，詞彙在 CONTEXT.md。先讀這三份。
+>
+> /code-review b8089bd
+>
+> - 這是 #16：整份交付的一次性 review，先把 #16 讀完，固定點與兩軸的來源都寫在票裡
+> - Standards 軸沒有 CODING_STANDARDS.md，也不要補寫一份（Q7）；標準只有
+>   Fowler smell baseline、analysis_options.yaml、CONTEXT.md 的詞彙一致性
+> - Spec 軸的規格是 #14，特別查 Out of Scope 有沒有被偷偷實作
+> - 凡是 flutter analyze 已經把關的，不必再列
+>
+> 報告出來之後：
+>
+> 1. 完整貼成 #16 的 comment，兩軸分開，不合併、不跨軸重排
+> 2. 逐項標上處置：已修（附 sha）／不修（附撞到的 Q 編號）／待辦（開票附編號）
+> 3. 「不修」是正當結論——這個 repo 有 37 項刻意的取捨，把它們當缺陷改掉是最糟的結果
+> 4. 修完跑 flutter analyze 與 flutter test，全綠才收
+> 5. 順帶把 #16 補進 README「票的執行順序與相依關係」那張 mermaid 圖
+> 6. 最後依 docs/agents/delivery.md 交付：commit、push、關 #16
+
+**當下意圖（AI 觀察）**
+把「審查」與「照單全改」分開。Prompt 裡份量最重的是第 3 點：先替 AI 設好「不修是正當結論」這個出口，否則一個被要求找問題的 agent 會傾向把 37 項刻意的取捨當成缺陷逐一「修好」，而那正是這個 repo 最禁不起的一種破壞。同時把兩軸的標準來源與範圍先釘死（不補寫 CODING_STANDARDS、不重列 lint 已把關的項目），避免報告被無效發現稀釋。
+
+**產出**
+兩軸平行 sub-agent 各跑一次，兩份都回報「幾乎無發現」；逐檔複驗後最終得到 Standards 5 項、Spec 3 項，其中唯一的 hard violation 是 README 首段殘留被 F47 推翻的「12 小時」（`71924bc` 已修）。完整報告貼為 #16 的 comment，兩軸分開；七項「不修」各自附上撞到的 Q 編號；待辦 0 項。順帶把 #16 補進 README 的相依圖與執行順序。收尾時 `flutter analyze` No issues found、`flutter test` 86 tests all passed，push 後關閉 #16。
+
+過程中另外實測出 F49：`flutter analyze` 會自動把 `analysis_options.yaml` 的平台排除行寫回去，所以那四行不是贅字而是工具鏈托管的區段。
+
+---
+
+### #15 · 2026-08-25 23:36
+
+**我下的 prompt**
+
+> 幫我把code review結果更新在文件上
+
+**當下意圖（AI 觀察）**
+Review 的結果當時只存在於 #16 這一則 issue comment 裡，而 repo 的三份文件（拷問紀錄、規格、票）各有分工。這則 prompt 要的是把 review 期間新得到的**事實與限制**，按 `docs/agents/delivery.md`「當現實推翻決定」那條規則落回各自該去的地方，而不是把報告全文再貼一份——後者正是 #14 Further Notes 警告過的互相抄寫。
+
+**產出**
+`docs/GRILL_LOG.md`：Q30 新增「實作期修正二」記下 F49（含決定不變的結論）、全案矛盾稽核表補第 10、11 兩列、Q37 補上「#16 執行完畢」的實作期補記（三件事：唯一的 hard violation 出在敘述而非程式碼、七項不修各自撞到哪個編號、平行 sub-agent 首輪雙雙看漏）。`analysis_options.yaml`：`exclude:` 上方加一行註解說明刪了會被寫回（實測註解本身會被保留）。本檔補上 #14、#15 兩則，並標明 #13 之後的逐票實作 sessions 是已知缺口。

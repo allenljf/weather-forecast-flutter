@@ -1111,6 +1111,23 @@ riverpod 規則在 CLI 不生效，選項為 (a) 接受缺口、CI 不把關；(
 
 - 取代原「CI 多一個 `dart run custom_lint` 步驟」：CI 的 `analyze` job 只跑 `flutter analyze`。
 - **riverpod 規則只在 IDE 生效是已知且已接受的缺口**，不是疏失。理由與實測寫在 `analysis_options.yaml` 的註解裡；若日後 SDK 支援 CLI plugin，不需改設定就會自動補上。
+
+**實作期修正二（2026-08-25，#16 code review 時實測）**
+
+Q30 選 1(c) 的前提是「`analysis_options.yaml` 是自訂的」。Review 的 Standards 軸把 `exclude:` 裡四個不存在的平台目錄標成 Speculative Generality，實際動手刪之後才發現刪不掉。
+
+| # | 事實 | 來源 |
+| --- | --- | --- |
+| F49 | `flutter analyze` 會自動維護 `analysis_options.yaml` 的 `exclude:` 區塊：刪掉 `web/**`、`windows/**`、`macos/**`、`linux/**` 後執行，它會先印 `Upgrading analysis_options.yaml to exclude build and platform directories.` 再把四行寫回去，`git diff` 隨即歸零。手寫的註解則不受影響，會被保留 | 實測 Flutter 3.47.0（2026-08-25）|
+
+所以這四行不是贅字，也不是 Q17（只產 android/ios）的漏網之魚——它們不屬於任何人的決定，是工具鏈自己維護的區段。**決定不變**：保留現狀，不再嘗試刪除。
+
+這同時給 Q30 加上一條限制：`analysis_options.yaml` 是**部分自訂、部分工具鏈托管**的檔案。日後若有人又把這四行當成殘跡刪掉，會再踩一次同一個坑，因此理由寫回檔案的註解裡（與 F44 同一個作法）。
+
+**修正的影響**
+
+- `analysis_options.yaml` 的 `exclude:` 上方新增一行註解，說明刪了會被寫回。
+- 決定本身、CI 與任何程式邏輯皆不變。
 - 連帶修改 #1 的驗收條件（刪去 `dart run custom_lint` 一條）與 #11 的 `analyze` job。
 
 ---
@@ -1161,6 +1178,8 @@ riverpod 規則在 CLI 不生效，選項為 (a) 接受缺口、CI 不把關；(
 | 7 | Q30「加 `custom_lint`，CI 跑 `dart run custom_lint`」 | 被實作期實測推翻（F41–F44）→ 改用 analyzer plugin 機制，移除 `custom_lint`；見 Q30 的實作期修正 |
 | 8 | #11 原文的 `build_runner build --delete-conflicting-outputs` | 被實作期實測推翻（F45）→ 該旗標在 build_runner 2.16.0 已移除；見 Q5 的實作期修正 |
 | 9 | Q4／`CONTEXT.md`「三個時段各 12 小時、合計恆為 36 小時」 | 被實作期實測推翻（F47）→ 只有第二、三段是 12 小時，第一段隨查詢時間被截短；36 小時是上限而非恆等式，恆為真的只有「恰好三段」。見 Q4 的實作期修正 |
+| 10 | README 首段「看到三個 **12 小時**時段」 | 同一個 F47 的漏網之魚。當時已改過 `CONTEXT.md`、`forecast_slot.dart` 與 #14 三處，只剩 README 這一句——由 #16 的 Standards 軸揪出，已修（`71924bc`）|
+| 11 | Q30 隱含的前提「`analysis_options.yaml` 是自訂的」 | 被 #16 實測修正（F49）→ `exclude:` 區塊由 `flutter analyze` 托管，刪了會被寫回；該檔是部分自訂、部分工具鏈維護。見 Q30 的實作期修正二 |
 
 ### 共通事實（本輪查證所得）
 
@@ -1370,6 +1389,16 @@ F40（見上表）。Q14 已決定不開 PR，理由是單人 PR 的空白 revie
 - 完成實作後需開一則 `area:docs` issue 承載 review 報告，內容含 Standards 軸與 Spec 軸的發現，以及每一項的處置。
 - 維持 Q14（不開 PR）不變。
 - 注意：本 repo 沒有 `CODING_STANDARDS.md`／`CONTRIBUTING.md`，Standards 軸將只能依 Fowler smell 基準 + `analysis_options.yaml` + `CONTEXT.md` 的詞彙一致性。依 Q7 的範圍紀律，不另外補寫標準文件。
+
+**實作期補記（2026-08-25，#16 執行完畢）**
+
+Review 已執行並收在 [#16](https://github.com/allenljf/weather-forecast-flutter/issues/16)：固定點 `b8089bd`，範圍 23 個 commit／48 個檔案。Standards 5 項（1 已修、4 不修）、Spec 3 項（全數不修）、待辦 0 項。
+
+三件值得記下來的事：
+
+1. **唯一的 hard violation 出在文件而不是程式碼**——README 首段還留著被 F47 推翻的「12 小時」（見稽核表第 10 列）。程式邏輯沒有任何一處假設時段等長，這個缺陷從頭到尾只存在於敘述裡，也因此躲過了 `flutter analyze`、86 個測試與前一次的收尾稽核。**沒有測試會替敘述把關**，這是這次 review 唯一抓到、也只有 review 抓得到的東西。
+2. **七項「不修」全部撞上已定案的取捨**（Q3／Q24、Q7／Q25、Q10、Q11、Q19、Q23），或如 F49 撞上工具鏈。Q37(b) 選「留痕」的價值在這裡才兌現：報告寫下每一項撞到哪一個編號，後來的人可以重新檢驗那個決定，而不是把刻意的設計當缺陷再修一次。
+3. **兩軸的平行 sub-agent 第一輪都回報「幾乎無發現」**。對一份 3,650 行的交付來說，這個結果本身就是訊號——最終八項發現全部是逐檔複驗時才浮出來的。F40 說 `/code-review` 派兩個 sub-agent，但沒說它們的產出可以直接採信；**兩軸分開防的是一軸遮蔽另一軸，防不了兩軸一起看漏**。
 
 
 
