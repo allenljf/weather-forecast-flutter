@@ -1,0 +1,57 @@
+# --- API token ---------------------------------------------------------------
+# `reviewer.json` is deliberately committed: it holds a free, disposable CWA
+# token so reviewers can run the app without registering. See README.
+# Any other file here is treated as a real secret and stays out of git.
+dart_defines/*.json
+!dart_defines/reviewer.json
+!dart_defines/*.example.json
+
+# --- Flutter / Dart ----------------------------------------------------------
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.log
+
+# Coverage
+coverage/
+
+# --- IDE ---------------------------------------------------------------------
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/*
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# --- macOS -------------------------------------------------------------------
+.DS_Store
+
+# --- Android -----------------------------------------------------------------
+android/.gradle/
+android/local.properties
+android/key.properties
+android/app/debug/
+android/app/profile/
+android/app/release/
+*.jks
+*.keystore
+
+# --- iOS ---------------------------------------------------------------------
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/ephemeral/
+ios/Flutter/flutter_export_environment.sh
+ios/ServiceDefinitions.json
+ios/Runner/GeneratedPluginRegistrant.*
+**/*.mode1v3
+**/*.mode2v3
+**/*.perspectivev3
+**/*.pbxuser
+**/xcuserdata/
