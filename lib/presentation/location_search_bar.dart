@@ -48,6 +48,8 @@ class _LocationSearchBarState extends ConsumerState<LocationSearchBar> {
 
   void _submit() {
     if (!_canSubmit) return;
+    // 送出後收鍵盤：iOS/Android 點按鈕不會自動讓輸入框失焦，鍵盤會擋住結果。
+    FocusScope.of(context).unfocus();
     unawaited(
       ref.read(forecastControllerProvider.notifier).search(_query.text),
     );
