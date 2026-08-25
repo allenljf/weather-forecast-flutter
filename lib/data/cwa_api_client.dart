@@ -38,17 +38,21 @@ class CwaApiClient {
   /// 連線與接收各 15 秒。（Q18(iii)）
   static const timeout = Duration(seconds: 15);
 
+  /// 查詢單一縣市的完整請求網址。（Q26(a)：每次查詢只帶一個縣市）
+  ///
+  /// 公開它是因為上游回空陣列時也是 HTTP 200（F11），那條路徑上沒有失敗可以
+  /// 攜帶網址，但診斷資訊仍需要說出這一次到底問了哪一個網址。
+  static Uri requestUriFor(String locationName) => Uri.parse(baseUrl)
+      .resolve(datasetPath)
+      .replace(queryParameters: {'locationName': locationName});
+
   final Dio _dio;
 
   /// 查詢單一縣市。空清單代表上游回了空陣列，由呼叫端決定那算什麼失敗。
   Future<List<ForecastSlot>> fetchForecast(String locationName) async {
     final Response<String> response;
     try {
-      response = await _dio.get<String>(
-        datasetPath,
-        // 每次查詢只帶一個縣市（Q26(a)）。
-        queryParameters: {'locationName': locationName},
-      );
+      response = await _dio.getUri<String>(requestUriFor(locationName));
     } on DioException catch (error) {
       throw CwaApiException(_failureFrom(error));
     }

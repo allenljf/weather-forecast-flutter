@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,32 +6,7 @@ import 'package:weather_forecast/data/cwa_api_client.dart';
 import 'package:weather_forecast/domain/failure.dart';
 import 'package:weather_forecast/domain/forecast_slot.dart';
 
-/// 手寫的傳輸層替身。（Q12(a)）
-///
-/// 刻意不引入 `http_mock_adapter`：它兩年未更新，與 dio 5.11 的相容性未知（F20）。
-class FakeHttpClientAdapter implements HttpClientAdapter {
-  FakeHttpClientAdapter(this._respond);
-
-  final Future<ResponseBody> Function(RequestOptions options) _respond;
-
-  final requests = <RequestOptions>[];
-
-  @override
-  Future<ResponseBody> fetch(
-    RequestOptions options,
-    Stream<Uint8List>? requestStream,
-    Future<void>? cancelFuture,
-  ) {
-    requests.add(options);
-    return _respond(options);
-  }
-
-  @override
-  void close({bool force = false}) {}
-}
-
-String fixture(String name) =>
-    File('test/fixtures/cwa/$name').readAsStringSync();
+import 'fake_http_client_adapter.dart';
 
 /// 格式錯誤的變體一律**由實測存下的正常回應衍生**，並在呼叫端就地說明改了什麼；
 /// 不使用憑空杜撰的假資料，否則測的是想像中的 API 而不是真的那一個。
