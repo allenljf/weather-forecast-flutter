@@ -13,3 +13,7 @@ The five canonical triage roles, using the default label strings. See `docs/agen
 ### Domain docs
 
 Single-context: `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+### Delivery
+
+Finishing a ticket: commit, push, close, hand off to the next one. See `docs/agents/delivery.md`.
