@@ -52,7 +52,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('臺南市'), findsOneWidget, reason: '使用者要能確認沒有查錯縣市');
-    // 三段 × 12 小時 = 題目名稱裡的 36 小時；相對日省得使用者去讀完整年月日。
+    // 相對日省得使用者去讀完整年月日。
     expect(find.text('今日 18:00 ～ 明日 06:00'), findsOneWidget);
     expect(find.text('明日 06:00 ～ 明日 18:00'), findsOneWidget);
     expect(find.text('明日 18:00 ～ 後天 06:00'), findsOneWidget);
@@ -222,7 +222,9 @@ final anyUri = Uri.parse(
   'https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001',
 );
 
-/// 今明 36 小時：三段 12 小時，從今天傍晚一路排到後天早上。
+/// 三個預報時段，從今天傍晚一路排到後天早上。
+///
+/// 這裡三段各 12 小時，是第一段未被截短的那一半情況；時段長度本身不是不變式（F47）。
 ///
 /// 起訖時間以「今天的 00:00」為基準推算，而不是寫死日期——相對日的標籤本來就
 /// 取決於今天是哪一天，寫死日期的測試明天就會紅。
